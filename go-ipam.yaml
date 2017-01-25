@@ -1,0 +1,169 @@
+swagger: "2.0"
+
+info:
+  version: 1.0.0
+  title: nic api
+  description: A simple API to maintain network related information
+
+schemes:
+  - http
+host: localhost
+basePath: /v1
+
+consumes:
+  - application/json
+  - application/x-www-form-urlencoded
+
+produces:
+  - application/json
+  - application/json; charset=utf-8
+
+paths:
+  /owner:
+    get:
+      summary: Get information about all owners
+      description: Returns a list of all owners in the database
+      parameters:
+        - $ref: "#/parameters/pageSize"
+        - $ref: "#/parameters/pageNumber"
+      responses:
+        200:
+          description: A list of Owner
+          schema:
+            $ref: "#/definitions/Owners"
+        404:
+          $ref: "#/responses/NoOwnersFoundResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+    post:
+      summary: Creates a new owner
+      description: Add a new Owner to the database.
+      parameters:
+        - name: owner
+          in: body
+          description: The Owner to create.
+          schema:
+            '$ref': "#/definitions/Owner"
+      responses:
+        204:
+          description: Owner created succesfully.
+        400:
+          description: Owner could not be created.
+        500:
+          '$ref': "#/responses/Standard500ErrorResponse"
+    put:
+      summary: Updates existing owner
+      description: Updates an existing Owner in the database.
+      parameters:
+        - name: owner
+          in: body
+          description: The Owner to update.
+          schema:
+            '$ref': "#/definitions/Owner"
+      responses:
+        204:
+          description: Owner updated succesfully.
+        400:
+          description: Owner could not be updated.
+        500:
+          '$ref': "#/responses/Standard500ErrorResponse"
+  /owner/{username}:
+    parameters:
+      - $ref: "#/parameters/username"
+    get:
+      summary: Get information about an owner
+      description: Returns a single Owner
+      responses:
+        200:
+          description: a Owner
+          schema:
+            '$ref': "#/definitions/Owner"
+        404:
+          '$ref': "#/responses/OwnerDoesNotExistResponse"
+        500:
+          '$ref': "#/responses/Standard500ErrorResponse"
+    delete:
+      summary: Deletes an owner
+      description: Delete a single owner identified by its username
+      responses:
+        204:
+          description: Owner deleted succesfully
+        404:
+          $ref: "#/responses/OwnerDoesNotExistResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+
+definitions:
+  Owner:
+    required:
+      - username
+    properties:
+      username:
+        type: string
+        pattern: "[a-z0-9]{3,32}"
+        minLength: 3
+        maxLength: 32
+      fullname:
+        type: string
+        pattern: "[a-zA-Z0-9\ -]{3,64}"
+        minLength: 3
+        maxLength: 64
+      email:
+        type: string
+        pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+        minLength: 5
+        maxLength: 64
+  Owners:
+    type: array
+    minItems: 10
+    maxItems: 100
+    uniqueItems: true
+    items:
+      '$ref': "#/definitions/Owner"
+  Error:
+    properties:
+      code:
+        type: string
+        enum:
+          - DBERR
+          - APERR
+          - UNERR
+      message:
+        type: string
+
+responses:
+  Standard500ErrorResponse:
+    description: An unexpected error occurred.
+    schema:
+      '$ref': "#/definitions/Error"
+  NoOwnersFoundResponse:
+    description: No Owners found
+  OwnerDoesNotExistResponse:
+    description: Owner does not exist
+
+parameters:
+  username:
+    name: username
+    in: path
+    required: true
+    description: The username of a Owner.
+    type: string
+    pattern: "[a-z0-9]{3,32}"
+    minLength: 3
+    maxLength: 32
+  pageSize:
+    name: pageSize
+    in: query
+    description: Number of items to return
+    type: integer
+    format: int32
+    minimum: 0
+    exclusiveMinimum: true
+    maximum: 100
+    exclusiveMaximum: false
+    multipleOf: 10
+  pageNumber:
+    name: pageNumber
+    in: query
+    description: Page number
+    type: integer
