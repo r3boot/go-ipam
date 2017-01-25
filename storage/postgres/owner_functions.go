@@ -27,8 +27,6 @@ func DeleteOwner(data interface{}) error {
 	)
 
 	switch data.(type) {
-	case models.Owner:
-		username = *data.(models.Owner).Username
 	case string:
 		username = data.(string)
 	default:
@@ -70,8 +68,6 @@ func GetOwner(data interface{}) models.Owner {
 	switch data.(type) {
 	case string:
 		username = data.(string)
-	case models.Owner:
-		username = *data.(models.Owner).Username
 	default:
 		return models.Owner{}
 	}
