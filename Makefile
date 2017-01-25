@@ -22,4 +22,5 @@ ${CLIENT}:
 
 
 clean:
-	rm -rf build || true
+	grep restapi .gitignore | xargs rm -rf
+	rm -rf build build client cmd models || true
