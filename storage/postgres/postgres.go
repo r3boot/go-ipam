@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"errors"
+	"fmt"
 	"gopkg.in/pg.v5"
 )
 
 var schemaQueries []string = []string{
-	`CREATE TABLE IF NOT EXISTS owners (username TEXT NOT NULL UNIQUE PRIMARY KEY, fullname TEXT NOT NULL, email TEXT NOT NULL)`,
+	`CREATE TABLE IF NOT EXISTS owners (username VARCHAR(32) NOT NULL UNIQUE PRIMARY KEY, fullname VARCHAR(64) NOT NULL, email VARCHAR(64) NOT NULL)`,
+	`CREATE TABLE IF NOT EXISTS asnums (asnum INTEGER NOT NULL UNIQUE PRIMARY KEY, description VARCHAR(64) NOT NULL, username VARCHAR(32) REFERENCES owners)`,
 }
 
 var db *pg.DB
@@ -26,6 +28,7 @@ func createSchema() error {
 	for _, q = range schemaQueries {
 		_, err = db.Exec(q)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 	}

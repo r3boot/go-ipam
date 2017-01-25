@@ -53,6 +53,9 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		Database: "nic",
 	})
 
+	/*
+	 * Handlers for /v1/owner
+	 */
 	api.DeleteOwnerUsernameHandler = operations.DeleteOwnerUsernameHandlerFunc(func(params operations.DeleteOwnerUsernameParams) middleware.Responder {
 		if !backend.HasOwner(params.Username) {
 			return operations.NewDeleteOwnerUsernameNotFound()
@@ -109,6 +112,69 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		}
 
 		return operations.NewPutOwnerNoContent()
+	})
+
+	/*
+	 * Handlers for /v1/asnum
+	 */
+	api.DeleteAsnumAsnumHandler = operations.DeleteAsnumAsnumHandlerFunc(func(params operations.DeleteAsnumAsnumParams) middleware.Responder {
+		if !backend.HasAsnum(params.Asnum) {
+			return operations.NewDeleteAsnumAsnumNotFound()
+		}
+
+		if err = backend.DeleteAsnum(params.Asnum); err != nil {
+			return operations.NewDeleteAsnumAsnumInternalServerError()
+		}
+
+		return operations.NewDeleteAsnumAsnumNoContent()
+	})
+
+	api.GetAsnumHandler = operations.GetAsnumHandlerFunc(func(params operations.GetAsnumParams) middleware.Responder {
+		asnums := backend.GetAsnums()
+		if len(asnums) == 0 {
+			return operations.NewGetAsnumNotFound()
+		}
+
+		return operations.NewGetAsnumOK().WithPayload(asnums)
+	})
+
+	api.GetAsnumAsnumHandler = operations.GetAsnumAsnumHandlerFunc(func(params operations.GetAsnumAsnumParams) middleware.Responder {
+		asnum := backend.GetAsnum(params.Asnum)
+		if asnum.Asnum == nil {
+			return operations.NewGetAsnumAsnumNotFound()
+		}
+
+		return operations.NewGetAsnumAsnumOK().WithPayload(&asnum)
+	})
+
+	api.PostAsnumHandler = operations.PostAsnumHandlerFunc(func(params operations.PostAsnumParams) middleware.Responder {
+		asnum := models.Asnum{
+			Asnum:       params.Asnum.Asnum,
+			Description: params.Asnum.Description,
+			Username:    params.Asnum.Username,
+		}
+
+		log.Print("here")
+		if err = backend.AddAsnum(asnum); err != nil {
+			log.Print("error: " + err.Error())
+			return operations.NewPostAsnumBadRequest()
+		}
+
+		return operations.NewPostAsnumNoContent()
+	})
+
+	api.PutAsnumHandler = operations.PutAsnumHandlerFunc(func(params operations.PutAsnumParams) middleware.Responder {
+		owner := models.Asnum{
+			Asnum:       params.Asnum.Asnum,
+			Description: params.Asnum.Description,
+			Username:    params.Asnum.Username,
+		}
+
+		if err = backend.UpdateAsnum(owner); err != nil {
+			return operations.NewPutAsnumBadRequest()
+		}
+
+		return operations.NewPutAsnumNoContent()
 	})
 
 	api.ServerShutdown = func() {}

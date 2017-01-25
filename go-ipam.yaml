@@ -3,7 +3,7 @@ swagger: "2.0"
 info:
   version: 1.0.0
   title: nic api
-  description: A simple API to maintain network related information
+  description: A simple API to maintain network related information.
 
 schemes:
   - http
@@ -21,14 +21,14 @@ produces:
 paths:
   /owner:
     get:
-      summary: Get information about all owners
-      description: Returns a list of all owners in the database
+      summary: Get information about all Owners.
+      description: Returns a list of all Owners in the database.
       parameters:
         - $ref: "#/parameters/pageSize"
         - $ref: "#/parameters/pageNumber"
       responses:
         200:
-          description: A list of Owner
+          description: A list of Owner.
           schema:
             $ref: "#/definitions/Owners"
         404:
@@ -36,65 +36,139 @@ paths:
         500:
           $ref: "#/responses/Standard500ErrorResponse"
     post:
-      summary: Creates a new owner
+      summary: Creates a new Owner.
       description: Add a new Owner to the database.
       parameters:
         - name: owner
           in: body
           description: The Owner to create.
           schema:
-            '$ref': "#/definitions/Owner"
+            $ref: "#/definitions/Owner"
       responses:
         204:
           description: Owner created succesfully.
         400:
           description: Owner could not be created.
         500:
-          '$ref': "#/responses/Standard500ErrorResponse"
+          $ref: "#/responses/Standard500ErrorResponse"
     put:
-      summary: Updates existing owner
+      summary: Updates existing owner.
       description: Updates an existing Owner in the database.
       parameters:
         - name: owner
           in: body
           description: The Owner to update.
           schema:
-            '$ref': "#/definitions/Owner"
+            $ref: "#/definitions/Owner"
       responses:
         204:
           description: Owner updated succesfully.
         400:
           description: Owner could not be updated.
         500:
-          '$ref': "#/responses/Standard500ErrorResponse"
+          $ref: "#/responses/Standard500ErrorResponse"
   /owner/{username}:
     parameters:
       - $ref: "#/parameters/username"
     get:
-      summary: Get information about an owner
-      description: Returns a single Owner
+      summary: Get information about an Owner.
+      description: Returns a single Owner.
       responses:
         200:
-          description: a Owner
+          description: a Owner.
           schema:
-            '$ref': "#/definitions/Owner"
-        404:
-          '$ref': "#/responses/OwnerDoesNotExistResponse"
-        500:
-          '$ref': "#/responses/Standard500ErrorResponse"
-    delete:
-      summary: Deletes an owner
-      description: Delete a single owner identified by its username
-      responses:
-        204:
-          description: Owner deleted succesfully
+            $ref: "#/definitions/Owner"
         404:
           $ref: "#/responses/OwnerDoesNotExistResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+    delete:
+      summary: Deletes an Owner.
+      description: Delete a single Owner identified by its username.
+      responses:
+        204:
+          description: Owner deleted succesfully.
+        404:
+          $ref: "#/responses/OwnerDoesNotExistResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+  /asnum:
+    get:
+      summary: Get information about all Asnums.
+      description: Returns a list of all Asnums in the database.
+      parameters:
+        - $ref: "#/parameters/pageSize"
+        - $ref: "#/parameters/pageNumber"
+      responses:
+        200:
+          description: A list of Asnum
+          schema:
+            $ref: "#/definitions/Asnums"
+        404:
+          $ref: "#/responses/NoAsnumsFoundResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+    post:
+      summary: Creates a new Asnum.
+      description: Add a new Asnum to the database.
+      parameters:
+        - name: asnum
+          in: body
+          description: The Asnum to create.
+          schema:
+            $ref: "#/definitions/Asnum"
+      responses:
+        204:
+          description: Asnum created succesfully.
+        400:
+          description: Asnum could not be created.
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+    put:
+      summary: Updates existing Asnum.
+      description: Updates an existing Asnum in the database.
+      parameters:
+        - name: asnum
+          in: body
+          description: The Asnum to update.
+          schema:
+            $ref: "#/definitions/Asnum"
+      responses:
+        204:
+          description: Asnum updated succesfully.
+        400:
+          description: Asnum could not be updated.
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+  /asnum/{asnum}:
+    parameters:
+      - $ref: "#/parameters/asnum"
+    get:
+      summary: Get information about an Asnum
+      description: Returns a single Asnum
+      responses:
+        200:
+          description: an Asnum
+          schema:
+            $ref: "#/definitions/Asnum"
+        404:
+          $ref: "#/responses/AsnumDoesNotExistResponse"
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
+    delete:
+      summary: Deletes an Asnum
+      description: Delete a single Asnum identified by its asnum
+      responses:
+        204:
+          description: Asnum deleted succesfully
+        404:
+          $ref: "#/responses/AsnumDoesNotExistResponse"
         500:
           $ref: "#/responses/Standard500ErrorResponse"
 
 definitions:
   Owner:
+    type: object
     required:
       - username
     properties:
@@ -119,7 +193,34 @@ definitions:
     maxItems: 100
     uniqueItems: true
     items:
-      '$ref': "#/definitions/Owner"
+      $ref: "#/definitions/Owner"
+  Asnum:
+    type: object
+    required:
+      - asnum
+      - username
+    properties:
+      asnum:
+        type: integer
+        minimum: 64512
+        maximum: 65535
+      description:
+        type: string
+        pattern: "[a-zA-Z0-9-_\ ]{3,64}"
+        minLength: 3
+        maxLength: 64
+      username:
+        type: string
+        pattern: "[a-z0-9]{3,32}"
+        minLength: 3
+        maxLength: 32
+  Asnums:
+    type: array
+    minItems: 10
+    maxItems: 100
+    uniqueItems: true
+    items:
+      $ref: "#/definitions/Asnum"
   Error:
     properties:
       code:
@@ -135,11 +236,15 @@ responses:
   Standard500ErrorResponse:
     description: An unexpected error occurred.
     schema:
-      '$ref': "#/definitions/Error"
+      $ref: "#/definitions/Error"
   NoOwnersFoundResponse:
-    description: No Owners found
+    description: No Owners found.
   OwnerDoesNotExistResponse:
-    description: Owner does not exist
+    description: Owner does not exist.
+  NoAsnumsFoundResponse:
+    description: No Asnums found.
+  AsnumDoesNotExistResponse:
+    description: Asnum does not exist.
 
 parameters:
   username:
@@ -151,6 +256,14 @@ parameters:
     pattern: "[a-z0-9]{3,32}"
     minLength: 3
     maxLength: 32
+  asnum:
+    name: asnum
+    in: path
+    required: true
+    description: The Asnum to get details for.
+    type: integer
+    minimum: 64512
+    maximum: 65535
   pageSize:
     name: pageSize
     in: query

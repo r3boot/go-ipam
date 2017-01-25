@@ -13,6 +13,12 @@ type Storage struct {
 	HasOwner    func(interface{}) bool
 	UpdateOwner func(models.Owner) error
 	GetOwners   func() models.Owners
+	AddAsnum    func(models.Asnum) error
+	DeleteAsnum func(interface{}) error
+	GetAsnum    func(interface{}) models.Asnum
+	HasAsnum    func(interface{}) bool
+	UpdateAsnum func(models.Asnum) error
+	GetAsnums   func() models.Asnums
 }
 
 func Setup(cfg interface{}) *Storage {
@@ -28,6 +34,12 @@ func Setup(cfg interface{}) *Storage {
 		HasOwner:    postgres.HasOwner,
 		UpdateOwner: postgres.UpdateOwner,
 		GetOwners:   postgres.GetOwners,
+		AddAsnum:    postgres.AddAsnum,
+		DeleteAsnum: postgres.DeleteAsnum,
+		GetAsnum:    postgres.GetAsnum,
+		HasAsnum:    postgres.HasAsnum,
+		UpdateAsnum: postgres.UpdateAsnum,
+		GetAsnums:   postgres.GetAsnums,
 	}
 
 	storage.Connect(cfg)
