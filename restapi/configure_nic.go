@@ -154,7 +154,6 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			Username:    params.Asnum.Username,
 		}
 
-		log.Print("here")
 		if err = backend.AddAsnum(asnum); err != nil {
 			log.Print("error: " + err.Error())
 			return operations.NewPostAsnumBadRequest()
@@ -176,6 +175,72 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 
 		return operations.NewPutAsnumNoContent()
 	})
+
+	/*
+	 * Handlers for /v1/prefix
+	 */
+	api.DeletePrefixNetworkHandler = operations.DeletePrefixNetworkHandlerFunc(func(params operations.DeletePrefixNetworkParams) middleware.Responder {
+		if !backend.HasPrefix(params.Network) {
+			return operations.NewDeletePrefixNetworkNotFound()
+		}
+
+		if err = backend.DeletePrefix(params.Network); err != nil {
+			return operations.NewDeletePrefixNetworkInternalServerError()
+		}
+
+		return operations.NewDeletePrefixNetworkNoContent()
+	})
+
+	api.GetPrefixHandler = operations.GetPrefixHandlerFunc(func(params operations.GetPrefixParams) middleware.Responder {
+		prefixes := backend.GetPrefixes()
+		if len(prefixes) == 0 {
+			return operations.NewGetPrefixNotFound()
+		}
+
+		return operations.NewGetPrefixOK().WithPayload(prefixes)
+	})
+
+	api.GetPrefixNetworkHandler = operations.GetPrefixNetworkHandlerFunc(func(params operations.GetPrefixNetworkParams) middleware.Responder {
+		prefix := backend.GetPrefix(params.Network)
+		if prefix.Network == nil {
+			return operations.NewGetPrefixNetworkNotFound()
+		}
+
+		return operations.NewGetPrefixNetworkOK().WithPayload(&prefix)
+	})
+
+	api.PostPrefixHandler = operations.PostPrefixHandlerFunc(func(params operations.PostPrefixParams) middleware.Responder {
+		prefix := models.Prefix{
+			Network:     params.Prefix.Network,
+			Description: params.Prefix.Description,
+			Username:    params.Prefix.Username,
+		}
+
+		if err = backend.AddPrefix(prefix); err != nil {
+			log.Print("error: " + err.Error())
+			return operations.NewPostPrefixBadRequest()
+		}
+
+		return operations.NewPostPrefixNoContent()
+	})
+
+	api.PutPrefixHandler = operations.PutPrefixHandlerFunc(func(params operations.PutPrefixParams) middleware.Responder {
+		owner := models.Prefix{
+			Network:     params.Prefix.Network,
+			Description: params.Prefix.Description,
+			Username:    params.Prefix.Username,
+		}
+
+		if err = backend.UpdatePrefix(owner); err != nil {
+			return operations.NewPutPrefixBadRequest()
+		}
+
+		return operations.NewPutPrefixNoContent()
+	})
+
+	/*
+	 * Handlers end here
+	 */
 
 	api.ServerShutdown = func() {}
 

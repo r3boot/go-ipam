@@ -9,6 +9,7 @@ import (
 var schemaQueries []string = []string{
 	`CREATE TABLE IF NOT EXISTS owners (username VARCHAR(32) NOT NULL UNIQUE PRIMARY KEY, fullname VARCHAR(64) NOT NULL, email VARCHAR(64) NOT NULL)`,
 	`CREATE TABLE IF NOT EXISTS asnums (asnum INTEGER NOT NULL UNIQUE PRIMARY KEY, description VARCHAR(64) NOT NULL, username VARCHAR(32) REFERENCES owners)`,
+	`CREATE TABLE IF NOT EXISTS prefixes (network CIDR NOT NULL UNIQUE PRIMARY KEY, description VARCHAR(64) NOT NULL, username VARCHAR(32) REFERENCES owners)`,
 }
 
 var db *pg.DB

@@ -3,7 +3,7 @@ CLIENT = nic-client
 
 BUILD_DIR = ./build
 
-all: validate generate ${TARGET}
+all: validate generate ${SERVER}
 
 validate:
 	swagger validate go-ipam.yaml
