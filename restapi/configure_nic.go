@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
+	"strconv"
 
 	interpose "github.com/carbocation/interpose/middleware"
 	recover "github.com/dre1080/recover"
@@ -163,13 +164,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	})
 
 	api.PutAsnumHandler = operations.PutAsnumHandlerFunc(func(params operations.PutAsnumParams) middleware.Responder {
-		owner := models.Asnum{
+		asnum := models.Asnum{
 			Asnum:       params.Asnum.Asnum,
 			Description: params.Asnum.Description,
 			Username:    params.Asnum.Username,
 		}
 
-		if err = backend.UpdateAsnum(owner); err != nil {
+		if err = backend.UpdateAsnum(asnum); err != nil {
 			return operations.NewPutAsnumBadRequest()
 		}
 
@@ -179,16 +180,17 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	/*
 	 * Handlers for /v1/prefix
 	 */
-	api.DeletePrefixNetworkHandler = operations.DeletePrefixNetworkHandlerFunc(func(params operations.DeletePrefixNetworkParams) middleware.Responder {
-		if !backend.HasPrefix(params.Network) {
-			return operations.NewDeletePrefixNetworkNotFound()
+	api.DeletePrefixSubnetPrefixlenHandler = operations.DeletePrefixSubnetPrefixlenHandlerFunc(func(params operations.DeletePrefixSubnetPrefixlenParams) middleware.Responder {
+		prefix := params.Subnet + "/" + strconv.Itoa(int(params.Prefixlen))
+		if !backend.HasPrefix(prefix) {
+			return operations.NewDeletePrefixSubnetPrefixlenNotFound()
 		}
 
-		if err = backend.DeletePrefix(params.Network); err != nil {
-			return operations.NewDeletePrefixNetworkInternalServerError()
+		if err = backend.DeletePrefix(prefix); err != nil {
+			return operations.NewDeletePrefixSubnetPrefixlenInternalServerError()
 		}
 
-		return operations.NewDeletePrefixNetworkNoContent()
+		return operations.NewDeletePrefixSubnetPrefixlenNoContent()
 	})
 
 	api.GetPrefixHandler = operations.GetPrefixHandlerFunc(func(params operations.GetPrefixParams) middleware.Responder {
@@ -200,23 +202,25 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetPrefixOK().WithPayload(prefixes)
 	})
 
-	api.GetPrefixNetworkHandler = operations.GetPrefixNetworkHandlerFunc(func(params operations.GetPrefixNetworkParams) middleware.Responder {
-		prefix := backend.GetPrefix(params.Network)
+	api.GetPrefixSubnetPrefixlenHandler = operations.GetPrefixSubnetPrefixlenHandlerFunc(func(params operations.GetPrefixSubnetPrefixlenParams) middleware.Responder {
+		network := params.Subnet + "/" + strconv.Itoa(int(params.Prefixlen))
+		prefix := backend.GetPrefix(network)
 		if prefix.Network == nil {
-			return operations.NewGetPrefixNetworkNotFound()
+			return operations.NewGetPrefixSubnetPrefixlenNotFound()
 		}
 
-		return operations.NewGetPrefixNetworkOK().WithPayload(&prefix)
+		return operations.NewGetPrefixSubnetPrefixlenOK().WithPayload(&prefix)
 	})
 
 	api.PostPrefixHandler = operations.PostPrefixHandlerFunc(func(params operations.PostPrefixParams) middleware.Responder {
+
 		prefix := models.Prefix{
 			Network:     params.Prefix.Network,
 			Description: params.Prefix.Description,
 			Username:    params.Prefix.Username,
 		}
 
-		if err = backend.AddPrefix(prefix); err != nil {
+		if err := backend.AddPrefix(prefix); err != nil {
 			log.Print("error: " + err.Error())
 			return operations.NewPostPrefixBadRequest()
 		}
@@ -225,13 +229,14 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	})
 
 	api.PutPrefixHandler = operations.PutPrefixHandlerFunc(func(params operations.PutPrefixParams) middleware.Responder {
-		owner := models.Prefix{
+
+		prefix := models.Prefix{
 			Network:     params.Prefix.Network,
 			Description: params.Prefix.Description,
 			Username:    params.Prefix.Username,
 		}
 
-		if err = backend.UpdatePrefix(owner); err != nil {
+		if err := backend.UpdatePrefix(prefix); err != nil {
 			return operations.NewPutPrefixBadRequest()
 		}
 

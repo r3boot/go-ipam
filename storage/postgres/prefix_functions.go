@@ -6,10 +6,33 @@ import (
 	"github.com/r3boot/go-ipam/models"
 )
 
+func getParentPrefix(network string) string {
+	var (
+		prefix models.Prefix
+		err    error
+	)
+
+	err = db.Model(&prefix).
+		Column("network").
+		Where("network >> ?", network).
+		OrderExpr("masklen(network) DESC").
+		Limit(1).
+		Select()
+
+	if err != nil {
+		fmt.Println("getParentPrefix: Failed to lookup parent: " + err.Error())
+		return ""
+	}
+
+	return *prefix.Network
+}
+
 func AddPrefix(prefix models.Prefix) error {
 	var (
 		err error
 	)
+
+	prefix.Parent = getParentPrefix(*prefix.Network)
 
 	err = db.Insert(&prefix)
 	if err != nil {
@@ -99,7 +122,7 @@ func UpdatePrefix(prefix models.Prefix) error {
 	)
 
 	_, err = db.Model(&prefix).
-		OnConflict("(prefix) DO UPDATE").
+		OnConflict("(network) DO UPDATE").
 		Set("description = ?", prefix.Description).
 		Set("username = ?", prefix.Username).
 		Insert()

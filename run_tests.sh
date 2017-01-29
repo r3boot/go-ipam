@@ -59,12 +59,16 @@ function test_prefix {
   run_curl GET ${U}
   run_curl GET ${U}/10.0.0.0/8
   run_curl POST /v1/owner '{"username":"test","fullname":"test","email":"abcd@abcd.xy"}'
+  run_curl POST ${U} '{"network":"0.0.0.0/0","description":"internet","username":"test"}'
   run_curl POST ${U} '{"network":"10.0.0.0/8","description":"rfc1918 10/8","username":"test"}'
+  run_curl POST ${U} '{"network":"10.42.0.0/19","description":"AS65342-NET","username":"test"}'
   run_curl GET ${U}
   run_curl GET ${U}/10.0.0.0/8
-  run_curl PUT ${U} '{"asnum":"10.0.0.0/8","description":"ipv6 rules","username":"test"}'
+  run_curl PUT ${U} '{"network":"10.0.0.0/8","description":"ipv6 rules","username":"test"}'
   run_curl GET ${U}/10.0.0.0/8
+  run_curl DELETE ${U}/10.42.0.0/19
   run_curl DELETE ${U}/10.0.0.0/8
+  run_curl DELETE ${U}/0.0.0.0/0
   run_curl GET ${U}/10.0.0.0/8
   run_curl DELETE /v1/owner/test
   echo "======> [$(date) Finished test of /v1/prefix"
