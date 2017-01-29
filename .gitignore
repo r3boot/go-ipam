@@ -7,3 +7,4 @@ restapi/doc.go
 restapi/embedded_spec.go
 restapi/operations
 restapi/server.go
+initial_token.txt

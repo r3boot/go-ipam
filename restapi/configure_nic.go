@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	interpose "github.com/carbocation/interpose/middleware"
 	recover "github.com/dre1080/recover"
@@ -54,10 +56,48 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		Database: "nic",
 	})
 
+	fs, err := os.Stat("initial_token.txt")
+	if err != nil {
+		panic("stat(): initial_token.txt not found")
+	}
+
+	fd, err := os.Open("initial_token.txt")
+	if err != nil {
+		panic("open(): failed to open initial_token.txt: " + err.Error())
+	}
+
+	data := make([]byte, fs.Size())
+	_, err = fd.Read(data)
+	if err != nil {
+		panic("read(): failed to read initial_token.txt: " + err.Error())
+	}
+
+	initial_token := strings.Trim(string(data), "\n")
+
+	// Applies when the "X-Admin-Token" header is set
+	api.AdminSecurityAuth = func(token string) (interface{}, error) {
+		// Check if token matches initial_token
+		if token == initial_token {
+			log.Print("Admin request authenticated via initial_token")
+			return true, nil
+		}
+		return nil, errors.Unauthenticated("admin level clearance")
+	}
+
+	// Applies when the "X-User-Token" header is set
+	api.UserSecurityAuth = func(token string) (interface{}, error) {
+		// Check if token matches initial_token
+		if token == initial_token {
+			log.Print("User request authenticated via initial_token")
+			return true, nil
+		}
+		return nil, errors.Unauthenticated("user level clearance")
+	}
+
 	/*
 	 * Handlers for /v1/owner
 	 */
-	api.DeleteOwnerUsernameHandler = operations.DeleteOwnerUsernameHandlerFunc(func(params operations.DeleteOwnerUsernameParams) middleware.Responder {
+	api.DeleteOwnerUsernameHandler = operations.DeleteOwnerUsernameHandlerFunc(func(params operations.DeleteOwnerUsernameParams, principal interface{}) middleware.Responder {
 		if !backend.HasOwner(params.Username) {
 			return operations.NewDeleteOwnerUsernameNotFound()
 		}
@@ -69,7 +109,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewDeleteOwnerUsernameNoContent()
 	})
 
-	api.GetOwnerHandler = operations.GetOwnerHandlerFunc(func(params operations.GetOwnerParams) middleware.Responder {
+	api.GetOwnerHandler = operations.GetOwnerHandlerFunc(func(params operations.GetOwnerParams, principal interface{}) middleware.Responder {
 		owners := backend.GetOwners()
 		if len(owners) == 0 {
 			return operations.NewGetOwnerNotFound()
@@ -78,7 +118,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetOwnerOK().WithPayload(owners)
 	})
 
-	api.GetOwnerUsernameHandler = operations.GetOwnerUsernameHandlerFunc(func(params operations.GetOwnerUsernameParams) middleware.Responder {
+	api.GetOwnerUsernameHandler = operations.GetOwnerUsernameHandlerFunc(func(params operations.GetOwnerUsernameParams, principal interface{}) middleware.Responder {
 		owner := backend.GetOwner(params.Username)
 		if owner.Username == nil {
 			return operations.NewGetOwnerUsernameNotFound()
@@ -87,7 +127,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetOwnerUsernameOK().WithPayload(&owner)
 	})
 
-	api.PostOwnerHandler = operations.PostOwnerHandlerFunc(func(params operations.PostOwnerParams) middleware.Responder {
+	api.PostOwnerHandler = operations.PostOwnerHandlerFunc(func(params operations.PostOwnerParams, principal interface{}) middleware.Responder {
 		owner := models.Owner{
 			Username: params.Owner.Username,
 			Fullname: params.Owner.Fullname,
@@ -101,7 +141,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewPostOwnerNoContent()
 	})
 
-	api.PutOwnerHandler = operations.PutOwnerHandlerFunc(func(params operations.PutOwnerParams) middleware.Responder {
+	api.PutOwnerHandler = operations.PutOwnerHandlerFunc(func(params operations.PutOwnerParams, principal interface{}) middleware.Responder {
 		owner := models.Owner{
 			Username: params.Owner.Username,
 			Fullname: params.Owner.Fullname,
@@ -118,7 +158,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	/*
 	 * Handlers for /v1/asnum
 	 */
-	api.DeleteAsnumAsnumHandler = operations.DeleteAsnumAsnumHandlerFunc(func(params operations.DeleteAsnumAsnumParams) middleware.Responder {
+	api.DeleteAsnumAsnumHandler = operations.DeleteAsnumAsnumHandlerFunc(func(params operations.DeleteAsnumAsnumParams, principal interface{}) middleware.Responder {
 		if !backend.HasAsnum(params.Asnum) {
 			return operations.NewDeleteAsnumAsnumNotFound()
 		}
@@ -130,7 +170,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewDeleteAsnumAsnumNoContent()
 	})
 
-	api.GetAsnumHandler = operations.GetAsnumHandlerFunc(func(params operations.GetAsnumParams) middleware.Responder {
+	api.GetAsnumHandler = operations.GetAsnumHandlerFunc(func(params operations.GetAsnumParams, principal interface{}) middleware.Responder {
 		asnums := backend.GetAsnums()
 		if len(asnums) == 0 {
 			return operations.NewGetAsnumNotFound()
@@ -139,7 +179,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetAsnumOK().WithPayload(asnums)
 	})
 
-	api.GetAsnumAsnumHandler = operations.GetAsnumAsnumHandlerFunc(func(params operations.GetAsnumAsnumParams) middleware.Responder {
+	api.GetAsnumAsnumHandler = operations.GetAsnumAsnumHandlerFunc(func(params operations.GetAsnumAsnumParams, principal interface{}) middleware.Responder {
 		asnum := backend.GetAsnum(params.Asnum)
 		if asnum.Asnum == nil {
 			return operations.NewGetAsnumAsnumNotFound()
@@ -148,7 +188,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetAsnumAsnumOK().WithPayload(&asnum)
 	})
 
-	api.PostAsnumHandler = operations.PostAsnumHandlerFunc(func(params operations.PostAsnumParams) middleware.Responder {
+	api.PostAsnumHandler = operations.PostAsnumHandlerFunc(func(params operations.PostAsnumParams, principal interface{}) middleware.Responder {
 		asnum := models.Asnum{
 			Asnum:       params.Asnum.Asnum,
 			Description: params.Asnum.Description,
@@ -163,7 +203,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewPostAsnumNoContent()
 	})
 
-	api.PutAsnumHandler = operations.PutAsnumHandlerFunc(func(params operations.PutAsnumParams) middleware.Responder {
+	api.PutAsnumHandler = operations.PutAsnumHandlerFunc(func(params operations.PutAsnumParams, principal interface{}) middleware.Responder {
 		asnum := models.Asnum{
 			Asnum:       params.Asnum.Asnum,
 			Description: params.Asnum.Description,
@@ -180,7 +220,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	/*
 	 * Handlers for /v1/prefix
 	 */
-	api.DeletePrefixSubnetPrefixlenHandler = operations.DeletePrefixSubnetPrefixlenHandlerFunc(func(params operations.DeletePrefixSubnetPrefixlenParams) middleware.Responder {
+	api.DeletePrefixSubnetPrefixlenHandler = operations.DeletePrefixSubnetPrefixlenHandlerFunc(func(params operations.DeletePrefixSubnetPrefixlenParams, principal interface{}) middleware.Responder {
 		prefix := params.Subnet + "/" + strconv.Itoa(int(params.Prefixlen))
 		if !backend.HasPrefix(prefix) {
 			return operations.NewDeletePrefixSubnetPrefixlenNotFound()
@@ -193,7 +233,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewDeletePrefixSubnetPrefixlenNoContent()
 	})
 
-	api.GetPrefixHandler = operations.GetPrefixHandlerFunc(func(params operations.GetPrefixParams) middleware.Responder {
+	api.GetPrefixHandler = operations.GetPrefixHandlerFunc(func(params operations.GetPrefixParams, principal interface{}) middleware.Responder {
 		prefixes := backend.GetPrefixes()
 		if len(prefixes) == 0 {
 			return operations.NewGetPrefixNotFound()
@@ -202,7 +242,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetPrefixOK().WithPayload(prefixes)
 	})
 
-	api.GetPrefixSubnetPrefixlenHandler = operations.GetPrefixSubnetPrefixlenHandlerFunc(func(params operations.GetPrefixSubnetPrefixlenParams) middleware.Responder {
+	api.GetPrefixSubnetPrefixlenHandler = operations.GetPrefixSubnetPrefixlenHandlerFunc(func(params operations.GetPrefixSubnetPrefixlenParams, principal interface{}) middleware.Responder {
 		network := params.Subnet + "/" + strconv.Itoa(int(params.Prefixlen))
 		prefix := backend.GetPrefix(network)
 		if prefix.Network == nil {
@@ -212,7 +252,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewGetPrefixSubnetPrefixlenOK().WithPayload(&prefix)
 	})
 
-	api.PostPrefixHandler = operations.PostPrefixHandlerFunc(func(params operations.PostPrefixParams) middleware.Responder {
+	api.PostPrefixHandler = operations.PostPrefixHandlerFunc(func(params operations.PostPrefixParams, principal interface{}) middleware.Responder {
 
 		prefix := models.Prefix{
 			Network:     params.Prefix.Network,
@@ -228,7 +268,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		return operations.NewPostPrefixNoContent()
 	})
 
-	api.PutPrefixHandler = operations.PutPrefixHandlerFunc(func(params operations.PutPrefixParams) middleware.Responder {
+	api.PutPrefixHandler = operations.PutPrefixHandlerFunc(func(params operations.PutPrefixParams, principal interface{}) middleware.Responder {
 
 		prefix := models.Prefix{
 			Network:     params.Prefix.Network,

@@ -38,6 +38,8 @@ paths:
     post:
       summary: Creates a new Owner.
       description: Add a new Owner to the database.
+      security:
+        - AdminSecurity: []
       parameters:
         - name: owner
           in: body
@@ -411,3 +413,20 @@ parameters:
     in: query
     description: Page number
     type: integer
+
+securityDefinitions:
+  UserSecurity:
+    type: apiKey
+    in: header
+    name: X-User-Token
+  AdminSecurity:
+    type: apiKey
+    in: header
+    name: X-Admin-Token
+  MediaSecurity:
+    type: apiKey
+    in: query
+    name: media-token
+
+security:
+  - UserSecurity: []

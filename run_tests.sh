@@ -1,6 +1,13 @@
 #!/bin/sh
 
 HOST='127.0.0.1:8080'
+INITIAL_TOKEN_FILE="./initial_token.txt"
+
+if [[ ! -f "${INITIAL_TOKEN_FILE}" ]]; then
+  echo "[E] ${INITIAL_TOKEN_FILE} not found"
+  exit 1
+fi
+INITIAL_TOKEN="$(cat ${INITIAL_TOKEN_FILE})"
 
 set -e
 
@@ -9,14 +16,23 @@ function run_curl {
   API_PATH="${2}"
   DATA="${3}"
 
+  TOKEN_STRING=""
+  if [[ "${METHOD}" == "POST" ]] && [[ ${API_PATH} == "/v1/owner" ]]; then
+    TOKEN_STRING="X-Admin-Token:${INITIAL_TOKEN}"
+  else
+    TOKEN_STRING="X-User-Token:${INITIAL_TOKEN}"
+  fi
 
   if [[ ! -z "${DATA}" ]]; then
     echo "send: ${DATA}"
     curl -X${METHOD} -s -w "${METHOD} ${API_PATH} -> %{http_code}\n-------\n" \
-      -d "${DATA}" -H 'Content-Type:application/json' \
+      -d "${DATA}" \
+      -H 'Content-Type:application/json' \
+      -H "${TOKEN_STRING}" \
       http://${HOST}${API_PATH}
   else
     curl -X${METHOD} -s -w "${METHOD} ${API_PATH} -> %{http_code}\n-------\n" \
+      -H "${TOKEN_STRING}" \
       http://${HOST}${API_PATH}
   fi
 }
@@ -76,13 +92,13 @@ function test_prefix {
 
 case "${1}" in
   'owner')
-    test_owner
+    test_owner ${INITIAL_TOKEN}
     ;;
   'asnum')
-    test_asnum
+    test_asnum ${INITIAL_TOKEN}
     ;;
   'prefix')
-    test_prefix
+    test_prefix ${INITIAL_TOKEN}
     ;;
   *)
     test_owner
