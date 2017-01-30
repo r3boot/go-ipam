@@ -265,6 +265,11 @@ definitions:
         pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
         minLength: 5
         maxLength: 64
+      token:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
   Owners:
     type: array
     minItems: 10

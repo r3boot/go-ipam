@@ -4,12 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/r3boot/go-ipam/models"
+	"github.com/satori/go.uuid"
 )
 
 func AddOwner(owner models.Owner) error {
 	var (
 		err error
 	)
+
+	if owner.Token == "" {
+		owner.Token = uuid.NewV4().String()
+		fmt.Println("Generated token " + owner.Token + " for user " + *owner.Username)
+	}
 
 	err = db.Insert(&owner)
 	if err != nil {
@@ -104,4 +110,22 @@ func UpdateOwner(owner models.Owner) error {
 	}
 
 	return err
+}
+
+func GetOwnerByToken(token string) models.Owner {
+	var (
+		err   error
+		owner models.Owner
+	)
+
+	err = db.Model(&owner).
+		Where("token = ?", token).
+		Select()
+
+	if err != nil {
+		fmt.Println("GetOwnerByToken: Select failed: " + err.Error())
+		return models.Owner{}
+	}
+
+	return owner
 }

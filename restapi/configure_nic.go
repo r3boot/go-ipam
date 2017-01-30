@@ -76,6 +76,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 
 	// Applies when the "X-Admin-Token" header is set
 	api.AdminSecurityAuth = func(token string) (interface{}, error) {
+		// Check if the token matches a known Owner token
+		owner := backend.GetOwnerByToken(token)
+		if owner.Username != nil {
+			log.Print("Admin request authenticated via token from " + *owner.Username)
+			return owner, nil
+		}
+
 		// Check if token matches initial_token
 		if token == initial_token {
 			log.Print("Admin request authenticated via initial_token")
@@ -86,6 +93,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 
 	// Applies when the "X-User-Token" header is set
 	api.UserSecurityAuth = func(token string) (interface{}, error) {
+		// Check if the token matches a known Owner token
+		owner := backend.GetOwnerByToken(token)
+		if owner.Username != nil {
+			log.Print("User request authenticated via token from " + *owner.Username)
+			return owner, nil
+		}
+
 		// Check if token matches initial_token
 		if token == initial_token {
 			log.Print("User request authenticated via initial_token")
