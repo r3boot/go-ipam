@@ -12,7 +12,7 @@ initial_token:
 validate:
 	swagger validate go-ipam.yaml
 
-generate:
+generate: initial_token
 	swagger generate server -f go-ipam.yaml
 	#swagger generate client -f go-ipam.yaml
 

@@ -2,11 +2,13 @@ package restapi
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	interpose "github.com/carbocation/interpose/middleware"
 	recover "github.com/dre1080/recover"
@@ -19,6 +21,7 @@ import (
 
 	"github.com/r3boot/go-ipam/models"
 	"github.com/r3boot/go-ipam/storage"
+	"github.com/r3boot/go-ipam/storage/email"
 	"github.com/r3boot/go-ipam/storage/postgres"
 )
 
@@ -32,8 +35,9 @@ func configureFlags(api *operations.NicAPI) {
 
 func configureAPI(api *operations.NicAPI) http.Handler {
 	var (
-		backend *storage.Storage
-		err     error
+		signup_enabled bool
+		backend        *storage.Storage
+		err            error
 	)
 	// configure the api here
 	api.ServeError = errors.ServeError
@@ -54,7 +58,14 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		User:     "nic_user",
 		Pass:     "gLJxBsf7wyZL2",
 		Database: "nic",
+	}, email.Config{
+		Smarthost:   "smtp.as65342.net:25",
+		Sender:      "ipam@as65342.net",
+		SenderName:  "IPAM network management",
+		NetworkName: "Test Network",
 	})
+
+	signup_enabled = true
 
 	fs, err := os.Stat("initial_token.txt")
 	if err != nil {
@@ -77,7 +88,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	// Applies when the "X-Admin-Token" header is set
 	api.AdminSecurityAuth = func(token string) (interface{}, error) {
 		// Check if the token matches a known Owner token
-		owner := backend.GetOwnerByToken(token)
+		owner := backend.GetOwnerByApiToken(token)
 		if owner.Username != nil {
 			log.Print("Admin request authenticated via token from " + *owner.Username)
 			return owner, nil
@@ -94,7 +105,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	// Applies when the "X-User-Token" header is set
 	api.UserSecurityAuth = func(token string) (interface{}, error) {
 		// Check if the token matches a known Owner token
-		owner := backend.GetOwnerByToken(token)
+		owner := backend.GetOwnerByApiToken(token)
 		if owner.Username != nil {
 			log.Print("User request authenticated via token from " + *owner.Username)
 			return owner, nil
@@ -107,6 +118,62 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		}
 		return nil, errors.Unauthenticated("user level clearance")
 	}
+
+	/*
+	 * Handlers for /v1/signup
+	 */
+	api.PostSignupHandler = operations.PostSignupHandlerFunc(func(params operations.PostSignupParams) middleware.Responder {
+		var (
+			salt   string
+			hash   []byte
+			hash_s string
+			ts     string
+		)
+
+		if !signup_enabled {
+			return operations.NewPostSignupNotFound()
+		}
+
+		if params.Owner.Password == "" {
+			log.Print("Signup: No Password specified")
+			return operations.NewPostSignupBadRequest()
+		}
+
+		ts = time.Now().Format(time.RFC3339)
+
+		salt, err = backend.GenerateSalt(32)
+		if err != nil {
+			log.Print("Signup: " + err.Error())
+			return operations.NewPostSignupBadRequest()
+		}
+
+		hash, err = backend.GenerateHash(params.Owner.Password, salt)
+		if err != nil {
+			log.Print("Signup: " + err.Error())
+			return operations.NewPostSignupBadRequest()
+		}
+		hash_s = base64.URLEncoding.EncodeToString(hash)
+
+		owner := models.Owner{
+			Username:       params.Owner.Username,
+			Password:       hash_s,
+			Salt:           salt,
+			IsActive:       false,
+			IsAdmin:        false,
+			Fullname:       params.Owner.Fullname,
+			Email:          params.Owner.Email,
+			SignupTime:     ts,
+			ActivationTime: "",
+			LastLogin:      "",
+			LastLoginHost:  "",
+		}
+
+		if err = backend.RunSignup(owner); err != nil {
+			return operations.NewPostSignupBadRequest()
+		}
+
+		return operations.NewPostSignupNoContent()
+	})
 
 	/*
 	 * Handlers for /v1/owner

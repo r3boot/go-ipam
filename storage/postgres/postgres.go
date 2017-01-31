@@ -7,7 +7,8 @@ import (
 )
 
 var schemaQueries []string = []string{
-	`CREATE TABLE IF NOT EXISTS owners (username VARCHAR(32) NOT NULL UNIQUE PRIMARY KEY, fullname VARCHAR(64) NOT NULL, email VARCHAR(64) NOT NULL, token VARCHAR(36))`,
+	`CREATE TABLE IF NOT EXISTS owners (username VARCHAR(32) NOT NULL UNIQUE PRIMARY KEY, password TEXT NOT NULL, salt TEXT NOT NULL, fullname VARCHAR(64) NOT NULL, email VARCHAR(64) NOT NULL, session_token VARCHAR(36), api_token VARCHAR(36), is_active BOOLEAN, is_admin BOOLEAN, signup_time TIMESTAMP, activation_time TIMESTAMP, last_login TIMESTAMP, last_login_host VARCHAR(39))`,
+	`CREATE TABLE IF NOT EXISTS activations (token VARCHAR(36) NOT NULL UNIQUE PRIMARY KEY, username VARCHAR(32) NOT NULL REFERENCES owners, generation_time TIMESTAMP NOT NULL)`,
 	`CREATE TABLE IF NOT EXISTS asnums (asnum INTEGER NOT NULL UNIQUE PRIMARY KEY, description VARCHAR(64) NOT NULL, username VARCHAR(32) NOT NULL REFERENCES owners)`,
 	`CREATE TABLE IF NOT EXISTS prefixes (network CIDR NOT NULL UNIQUE PRIMARY KEY, description VARCHAR(64) NOT NULL, username VARCHAR(32) NOT NULL REFERENCES owners, parent CIDR REFERENCES prefixes)`,
 }

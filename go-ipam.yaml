@@ -19,6 +19,26 @@ produces:
   - application/json; charset=utf-8
 
 paths:
+  /signup:
+    post:
+      summary: Owner signup endpoint
+      description: Allow new Owners to signup
+      security: []
+      parameters:
+        - name: owner
+          in: body
+          description: The Owner to create.
+          schema:
+            $ref: "#/definitions/Owner"
+      responses:
+        204:
+          description: Signup completed succesfully.
+        400:
+          description: Failed to signup.
+        404:
+          description: Signup not enabled.
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
   /owner:
     get:
       summary: Get information about all Owners.
@@ -255,6 +275,14 @@ definitions:
         pattern: "[a-z0-9]{3,32}"
         minLength: 3
         maxLength: 32
+      password:
+        type: string
+        minLength: 8
+        maxLength: 128
+      salt:
+        type: string
+        minLength: 8
+        maxLength: 512
       fullname:
         type: string
         pattern: "[a-zA-Z0-9\ -]{3,64}"
@@ -265,11 +293,34 @@ definitions:
         pattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
         minLength: 5
         maxLength: 64
-      token:
+      sessionToken:
         type: string
         pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         minLength: 36
         maxLength: 36
+      apiToken:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
+      isActive:
+        type: boolean
+      isAdmin:
+        type: boolean
+      signupTime:
+        type: string
+        format: dateTime
+      activationTime:
+        type: string
+        format: dateTime
+      lastLogin:
+        type: string
+        format: dateTime
+      lastLoginHost:
+        type: string
+        pattern: "[0-9a-f.:]{7,39}"
+        minLength: 7
+        maxLength: 39
   Owners:
     type: array
     minItems: 10
@@ -277,6 +328,32 @@ definitions:
     uniqueItems: true
     items:
       $ref: "#/definitions/Owner"
+  Activation:
+    type: object
+    required:
+      - token
+      - username
+    properties:
+      token:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
+      username:
+        type: string
+        pattern: "[a-z0-9]{3,32}"
+        minLength: 3
+        maxLength: 32
+      generationTime:
+        type: string
+        format: dateTime
+  Activations:
+    type: array
+    minItems: 10
+    maxItems: 100
+    uniqueItems: true
+    items:
+      $ref: "#/definitions/Activation"
   Asnum:
     type: object
     required:
@@ -435,3 +512,4 @@ securityDefinitions:
 
 security:
   - UserSecurity: []
+
