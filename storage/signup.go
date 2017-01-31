@@ -3,13 +3,15 @@ package storage
 import (
 	"errors"
 	"github.com/r3boot/go-ipam/models"
+	"github.com/r3boot/go-ipam/storage/email"
 	"log"
 )
 
-func RunSignup(owner models.Owner) error {
+func RunSignup(queue chan email.ActivationQItem, owner models.Owner) error {
 	var (
-		token string
-		err   error
+		signupRequest email.ActivationQItem
+		token         string
+		err           error
 	)
 
 	if backend.HasOwner(owner) {
@@ -32,14 +34,8 @@ func RunSignup(owner models.Owner) error {
 		return err
 	}
 
-	err = backend.SendActivationEmail(owner, token)
-	if err != nil {
-		backend.DeleteOwner(owner.Username)
-		backend.DeleteActivation(token)
-		err = errors.New("RunSignup: " + err.Error())
-		log.Print(err)
-		return err
-	}
+	signupRequest = email.ActivationQItem{token, owner}
+	queue <- signupRequest
 
 	return nil
 }

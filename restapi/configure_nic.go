@@ -38,6 +38,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		signup_enabled bool
 		backend        *storage.Storage
 		err            error
+		activationQ    chan email.ActivationQItem
 	)
 	// configure the api here
 	api.ServeError = errors.ServeError
@@ -66,6 +67,9 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	})
 
 	signup_enabled = true
+
+	activationQ = make(chan email.ActivationQItem)
+	go email.SignupEmailRoutine(activationQ)
 
 	fs, err := os.Stat("initial_token.txt")
 	if err != nil {
@@ -168,7 +172,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			LastLoginHost:  "",
 		}
 
-		if err = backend.RunSignup(owner); err != nil {
+		if err = backend.RunSignup(activationQ, owner); err != nil {
 			return operations.NewPostSignupBadRequest()
 		}
 

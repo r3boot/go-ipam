@@ -10,7 +10,7 @@ type Storage struct {
 	GenerateSalt        func(int) (string, error)
 	GenerateHash        func(string, string) ([]byte, error)
 	GenerateToken       func() string
-	RunSignup           func(models.Owner) error
+	RunSignup           func(chan email.ActivationQItem, models.Owner) error
 	NewActivation       func(models.Owner, string) error
 	DeleteActivation    func(string) error
 	GetActivations      func() models.Activations

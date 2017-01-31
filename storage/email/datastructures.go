@@ -1,5 +1,9 @@
 package email
 
+import (
+	"github.com/r3boot/go-ipam/models"
+)
+
 type Config struct {
 	Smarthost   string
 	Sender      string
@@ -15,4 +19,9 @@ type TemplateData struct {
 	Token       string
 	Sender      string
 	SenderName  string
+}
+
+type ActivationQItem struct {
+	Token string
+	models.Owner
 }
