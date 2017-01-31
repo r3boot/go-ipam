@@ -1,6 +1,10 @@
 package email
 
-const SignupTemplate string = `Dear {{.Fullname}},
+const SignupTemplate string = `From: {{.SenderName}} <{{.Sender}}>
+To: {{.Fullname}} <{{.Recipient}}>
+Subject: Please activate your account on {{.NetworkName}}
+
+Dear {{.Fullname}},
 
 Thank you for signing up on {{.NetworkName}}, the premier tier-1 network in
 your neighborhood. To complete your registration please follow the link below

@@ -9,8 +9,10 @@ type Config struct {
 }
 
 type TemplateData struct {
+	Recipient   string
 	Fullname    string
 	NetworkName string
 	Token       string
+	Sender      string
 	SenderName  string
 }

@@ -60,7 +60,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		Database: "nic",
 	}, email.Config{
 		Smarthost:   "smtp.as65342.net:25",
-		Sender:      "ipam@as65342.net",
+		Sender:      "do-not-reply@as65342.net",
 		SenderName:  "IPAM network management",
 		NetworkName: "Test Network",
 	})
