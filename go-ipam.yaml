@@ -39,6 +39,20 @@ paths:
           description: Signup not enabled.
         500:
           $ref: "#/responses/Standard500ErrorResponse"
+  /activate/{token}:
+    get:
+      summary: Activate an Owner
+      description: Activate a newly signed up Owner.
+      security: []
+      parameters:
+        - $ref: "#/parameters/token"
+      responses:
+        204:
+          description: Owner activated succesfully.
+        400:
+          description: Activation failed.
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
   /owner:
     get:
       summary: Get information about all Owners.
@@ -479,6 +493,14 @@ parameters:
     format: int32
     minimum: 0
     maximum: 128
+  token:
+    name: token
+    in: path
+    required: true
+    type: string
+    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    minLength: 36
+    maxLength: 36
   pageSize:
     name: pageSize
     in: query

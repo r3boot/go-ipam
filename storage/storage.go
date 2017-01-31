@@ -25,6 +25,7 @@ type Storage struct {
 	UpdateOwner         func(models.Owner) error
 	GetOwners           func() models.Owners
 	GetOwnerByApiToken  func(string) models.Owner
+	ActivateOwner       func(string, string) error
 	AddAsnum            func(models.Asnum) error
 	DeleteAsnum         func(interface{}) error
 	GetAsnum            func(interface{}) models.Asnum
@@ -65,6 +66,7 @@ func Setup(cfg interface{}, email_cfg interface{}) *Storage {
 		UpdateOwner:         postgres.UpdateOwner,
 		GetOwners:           postgres.GetOwners,
 		GetOwnerByApiToken:  postgres.GetOwnerByApiToken,
+		ActivateOwner:       postgres.ActivateOwner,
 		AddAsnum:            postgres.AddAsnum,
 		DeleteAsnum:         postgres.DeleteAsnum,
 		GetAsnum:            postgres.GetAsnum,

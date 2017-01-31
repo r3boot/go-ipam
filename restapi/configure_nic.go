@@ -180,6 +180,41 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	})
 
 	/*
+	 * Handlers for /v1/activate
+	 */
+	api.GetActivateTokenHandler = operations.GetActivateTokenHandlerFunc(func(params operations.GetActivateTokenParams) middleware.Responder {
+		var (
+			activation models.Activation
+			ts         string
+		)
+
+		ts = time.Now().Format(time.RFC3339)
+
+		if !backend.HasActivation(params.Token) {
+			log.Print("Activation: Received an unknown token: " + params.Token)
+			return operations.NewGetActivateTokenBadRequest()
+		}
+
+		activation = backend.GetActivation(params.Token)
+		if activation.Token == nil {
+			log.Print("Activation: Received an unknown token: " + params.Token)
+			return operations.NewGetActivateTokenBadRequest()
+		}
+
+		if err = backend.ActivateOwner(*activation.Username, ts); err != nil {
+			log.Print("Activation: Failed to activate Owner: " + err.Error())
+			return operations.NewGetActivateTokenBadRequest()
+		}
+
+		if err = backend.DeleteActivation(params.Token); err != nil {
+			log.Print("Activation: Failed to delete activation token: " + err.Error())
+			return operations.NewGetActivateTokenBadRequest()
+		}
+
+		return operations.NewGetActivateTokenNoContent()
+	})
+
+	/*
 	 * Handlers for /v1/owner
 	 */
 	api.DeleteOwnerUsernameHandler = operations.DeleteOwnerUsernameHandlerFunc(func(params operations.DeleteOwnerUsernameParams, principal interface{}) middleware.Responder {

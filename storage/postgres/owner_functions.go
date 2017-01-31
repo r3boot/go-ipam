@@ -123,3 +123,18 @@ func GetOwnerByApiToken(token string) models.Owner {
 
 	return owner
 }
+
+func ActivateOwner(username string, ts string) error {
+	var (
+		err   error
+		owner models.Owner
+	)
+
+	_, err = db.Model(&owner).
+		Set("is_active = ?", true).
+		Set("activation_time = ?", ts).
+		Where("username = ?", username).
+		Update()
+
+	return err
+}
