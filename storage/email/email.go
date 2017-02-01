@@ -31,8 +31,8 @@ func renderTemplate(owner models.Owner, token string) (content bytes.Buffer, err
 	}
 
 	data = TemplateData{
-		Recipient:   *owner.Email,
-		Fullname:    *owner.Fullname,
+		Recipient:   owner.Email,
+		Fullname:    owner.Fullname,
 		NetworkName: config.NetworkName,
 		Sender:      config.Sender,
 		SenderName:  config.SenderName,
@@ -87,7 +87,7 @@ func SendActivationEmail(owner models.Owner, token string) error {
 		return err
 	}
 
-	if err = conn.Rcpt(*owner.Email); err != nil {
+	if err = conn.Rcpt(owner.Email); err != nil {
 		err = errors.New("SendActivationEmail: RCTP TO failed: " + err.Error())
 		log.Print(err)
 		return err
@@ -104,7 +104,7 @@ func SendActivationEmail(owner models.Owner, token string) error {
 
 	conn.Quit()
 
-	log.Print("SendActivationEmail: Email sent to " + *owner.Email + " via " + config.Smarthost)
+	log.Print("SendActivationEmail: Email sent to " + owner.Email + " via " + config.Smarthost)
 
 	return nil
 }
