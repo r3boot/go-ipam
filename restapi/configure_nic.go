@@ -94,7 +94,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		// Check if the token matches a known Owner token
 		owner := backend.GetOwnerByApiToken(token)
 		if owner.Username != nil {
-			log.Print("Admin request authenticated via token from " + *owner.Username)
+			log.Print("Admin request authenticated via api token from " + *owner.Username)
+			return owner, nil
+		}
+
+		owner = backend.GetOwnerBySessionToken(token)
+		if owner.Username != nil {
+			log.Print("Admin request authenticated via session token from " + *owner.Username)
 			return owner, nil
 		}
 
@@ -111,7 +117,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		// Check if the token matches a known Owner token
 		owner := backend.GetOwnerByApiToken(token)
 		if owner.Username != nil {
-			log.Print("User request authenticated via token from " + *owner.Username)
+			log.Print("User request authenticated via api token from " + *owner.Username)
+			return owner, nil
+		}
+
+		owner = backend.GetOwnerBySessionToken(token)
+		if owner.Username != nil {
+			log.Print("Admin request authenticated via session token from " + *owner.Username)
 			return owner, nil
 		}
 
@@ -212,6 +224,47 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		}
 
 		return operations.NewGetActivateTokenNoContent()
+	})
+
+	/*
+	 * Handlers for /v1/auth
+	 */
+	api.PostAuthHandler = operations.PostAuthHandlerFunc(func(params operations.PostAuthParams) middleware.Responder {
+		var (
+			owner         models.Owner
+			hash          []byte
+			hash_s        string
+			session_token string
+		)
+
+		if params.Owner.Password == "" {
+			log.Print("Auth: No password specified")
+			return operations.NewPostAuthBadRequest()
+		}
+
+		owner = backend.GetOwner(*params.Owner.Username)
+		if owner.Username == nil {
+			log.Print("Auth: No such user: " + *params.Owner.Username)
+			return operations.NewPostAuthBadRequest()
+		}
+
+		hash, err = backend.GenerateHash(params.Owner.Password, owner.Salt)
+		hash_s = base64.URLEncoding.EncodeToString(hash)
+
+		if hash_s != owner.Password {
+			log.Print("Auth: Password does not match for " + *params.Owner.Username)
+			return operations.NewPostAuthBadRequest()
+		}
+
+		session_token = backend.GenerateToken()
+
+		err = backend.SetSessionToken(*params.Owner.Username, session_token)
+		if err != nil {
+			log.Print("Auth: Failed to update session token: " + err.Error())
+		}
+
+		return operations.NewPostAuthOK().
+			WithPayload(models.SessionToken(session_token))
 	})
 
 	/*

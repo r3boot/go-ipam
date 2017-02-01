@@ -15,7 +15,7 @@ func RunSignup(queue chan email.ActivationQItem, owner models.Owner) error {
 	)
 
 	if backend.HasOwner(owner) {
-		err = errors.New("RunSignup: Owner already exists: " + *owner.Fullname)
+		err = errors.New("RunSignup: Owner already exists: " + owner.Fullname)
 		log.Print(err)
 		return err
 	}

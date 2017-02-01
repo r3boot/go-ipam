@@ -53,6 +53,26 @@ paths:
           description: Activation failed.
         500:
           $ref: "#/responses/Standard500ErrorResponse"
+  /auth:
+    post:
+      summary: Authenticate and get session token.
+      description: Authenticate a Owner and return a session token.
+      security: []
+      parameters:
+        - name: owner
+          in: body
+          description: The Owner to authenticate.
+          schema:
+            $ref: "#/definitions/Owner"
+      responses:
+        200:
+          description: Authenticated succesfully.
+          schema:
+            $ref: "#/definitions/SessionToken"
+        400:
+          description: Failed to authenticate.
+        500:
+          $ref: "#/responses/Standard500ErrorResponse"
   /owner:
     get:
       summary: Get information about all Owners.
@@ -281,8 +301,6 @@ definitions:
     type: object
     required:
       - username
-      - fullname
-      - email
     properties:
       username:
         type: string
@@ -430,6 +448,11 @@ definitions:
     uniqueItems: true
     items:
       $ref: "#/definitions/Prefix"
+  SessionToken:
+    type: string
+    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    minLength: 36
+    maxLength: 36
   Error:
     properties:
       code:
