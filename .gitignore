@@ -8,3 +8,20 @@ restapi/embedded_spec.go
 restapi/operations
 restapi/server.go
 initial_token.txt
+
+# compiled output
+nic-app/dist
+nic-app/tmp
+
+# dependencies
+nic-app/node_modules
+nic-app/bower_components
+
+# misc
+nic-app/.sass-cache
+nic-app/connect.lock
+nic-app/coverage/*
+nic-app/libpeerconnection.log
+nic-app/npm-debug.log*
+nic-app/testem.log
+
