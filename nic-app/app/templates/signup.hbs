@@ -1,0 +1,69 @@
+<div class="jumbotron text-center">
+  <h2>Signup on TODO</h2>
+  <p>
+    Welcome to TODO, the premier tier-1 darknet in your local networking neighborhood. By signing up, you will get access to the set of tools that is needed to configure your part of the network for TODO. You will also be able to view information about other participants on this network.
+  </p>
+    <p>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-3"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-1 col-md-5 col-md-auto">
+        <label for="signup-username-input">Enter your desired username:</label>
+        {{input id="signup-username-input" value=username type="text" class="form-control" placeholder="Your desired username." autofocus="autofocus"}}
+      </div>
+    </div>
+    <br/>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-3"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-1 col-md-5 col-md-auto">
+        <label for="signup-fullname-input">Your full name:</label>
+        {{input id="signup-fullname-input" value=fullname type="text" class="form-control" placeholder="Eg. John Doe" autofocus="autofocus"}}
+      </div>
+    </div>
+    <br/>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-3"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-1 col-md-5 col-md-auto">
+        <label for="signup-email-input">Your email address:</label>
+        {{input id="signup-email-input" value=email type="email" class="form-control" placeholder="yourname@someprovider.net, must be valid" autofocus="autofocus"}}
+      </div>
+    </div>
+    <br/>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-3"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-1 col-md-5 col-md-auto">
+        <label for="signup-password-input">Enter password twice:</label>(min 8 chars)
+        {{input id="signup-password-input" value=password type="password" class="form-control" autofocus="autofocus"}}
+      </div>
+    </div>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-3"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-6 col-sm-offset-1 col-md-5 col-md-auto">
+        {{input id="signup-password-verify" value=verify type="password" class="form-control" autofocus="autofocus"}}
+      </div>
+    </div>
+  </p>
+  <br/>
+  {{#if passwordMismatch}}
+  <div class="form-group row justify-content-md-center">
+    <div class="col col-md-4"></div>
+    <div class="alert alert-danger col-xs-10 col-xs-offset-1 col-sm-offset-0 col-sm-4 col-md-5">{{passwordMismatch}}</div>
+  </div>
+  {{/if}}
+  <br/>
+  <p>
+    <div class="form-group row justify-content-md-center">
+      <div class="col col-md-4"></div>
+      <div class="col-xs-10 col-xs-offset-1 col-sm-offset-0 col-sm-4 col-md-5">
+        <button disabled={{isDisabled}} {{action 'newAccountRegistration'}} class="btn btn-primary btn-lg btn-block">Register account</button>
+      </div>
+    </div>
+  </p>
+  {{#if responseMessage}}
+  <br/>
+  <div class="form-group row justify-content-md-center">
+    <div class="col col-md-4"></div>
+    <div class="alert alert-success col-xs-10 col-xs-offset-1 col-sm-offset-0 col-sm-4 col-md-5">{{responseMessage}}</div>
+  </div>
+  {{/if}}
+</div>
+{{outlet}}
