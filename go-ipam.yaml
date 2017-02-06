@@ -33,10 +33,14 @@ paths:
           schema:
             $ref: "#/definitions/VndOwner"
       responses:
-        204:
+        200:
           description: Signup completed succesfully.
+          schema:
+            $ref: "#/definitions/SignupResponseData"
         400:
           description: Failed to signup.
+          schema:
+            $ref: "#/definitions/SignupResponseData"
         404:
           description: Signup not enabled.
         500:
@@ -508,6 +512,38 @@ definitions:
   Asset:
     type: string
     format: binary
+  SignupResponse:
+    type: object
+    properties:
+      result:
+        type: boolean
+      id:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
+  SignupResponseItem:
+    type: object
+    properties:
+      type:
+        type: string
+        pattern: "[a-zA-Z0-9_-]{1,64}"
+        minLength: 1
+        maxLength: 64
+      id:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
+      attributes:
+        $ref: "#/definitions/SignupResponse"
+  SignupResponseData:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/SignupResponseItem"
   Error:
     properties:
       code:

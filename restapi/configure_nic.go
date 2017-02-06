@@ -143,6 +143,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			salt       string
 			hash       []byte
 			hash_s     string
+			token      string
 			ts         string
 			post_owner *models.Owner
 		)
@@ -187,11 +188,22 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			LastLoginHost:  "",
 		}
 
-		if err = backend.RunSignup(activationQ, owner); err != nil {
+		if token, err = backend.RunSignup(activationQ, owner); err != nil {
 			return operations.NewPostSignupBadRequest()
 		}
 
-		return operations.NewPostSignupNoContent()
+		response := models.SignupResponseData{
+			Data: &models.SignupResponseItem{
+				ID:   token,
+				Type: "signup",
+				Attributes: &models.SignupResponse{
+					Result: true,
+					ID:     token,
+				},
+			},
+		}
+
+		return operations.NewPostSignupOK().WithPayload(&response)
 	})
 
 	/*
