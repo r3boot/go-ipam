@@ -35,10 +35,9 @@ export default Ember.Controller.extend({
         email: email,
         password: password,
       });
-      newAccount.save();
-
-      this.set('responseMessage', `An email will be sent to ${this.get('email')} containing a link to activate your account`);
-
+      newAccount.save().then(function () {
+        this.transitionToRoute('almostready');
+      }.bind(this));
     }
   }
 });

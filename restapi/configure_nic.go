@@ -140,17 +140,20 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	 */
 	api.PostSignupHandler = operations.PostSignupHandlerFunc(func(params operations.PostSignupParams) middleware.Responder {
 		var (
-			salt   string
-			hash   []byte
-			hash_s string
-			ts     string
+			salt       string
+			hash       []byte
+			hash_s     string
+			ts         string
+			post_owner *models.Owner
 		)
 
 		if !signup_enabled {
 			return operations.NewPostSignupNotFound()
 		}
 
-		if params.Owner.Password == "" {
+		post_owner = params.Owner.Data.Attributes
+
+		if post_owner.Password == "" {
 			log.Print("Signup: No Password specified")
 			return operations.NewPostSignupBadRequest()
 		}
@@ -163,7 +166,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			return operations.NewPostSignupBadRequest()
 		}
 
-		hash, err = backend.GenerateHash(params.Owner.Password, salt)
+		hash, err = backend.GenerateHash(post_owner.Password, salt)
 		if err != nil {
 			log.Print("Signup: " + err.Error())
 			return operations.NewPostSignupBadRequest()
@@ -171,13 +174,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		hash_s = base64.URLEncoding.EncodeToString(hash)
 
 		owner := models.Owner{
-			Username:       params.Owner.Username,
+			Username:       post_owner.Username,
 			Password:       hash_s,
 			Salt:           salt,
 			IsActive:       false,
 			IsAdmin:        false,
-			Fullname:       params.Owner.Fullname,
-			Email:          params.Owner.Email,
+			Fullname:       post_owner.Fullname,
+			Email:          post_owner.Email,
 			SignupTime:     ts,
 			ActivationTime: "",
 			LastLogin:      "",
@@ -194,7 +197,7 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	/*
 	 * Handlers for /v1/activate
 	 */
-	api.GetActivateTokenHandler = operations.GetActivateTokenHandlerFunc(func(params operations.GetActivateTokenParams) middleware.Responder {
+	api.GetActivateHandler = operations.GetActivateHandlerFunc(func(params operations.GetActivateParams) middleware.Responder {
 		var (
 			activation models.Activation
 			ts         string
@@ -204,26 +207,32 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 
 		if !backend.HasActivation(params.Token) {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateTokenBadRequest()
+			return operations.NewGetActivateBadRequest()
 		}
 
 		activation = backend.GetActivation(params.Token)
 		if activation.Token == nil {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateTokenBadRequest()
+			return operations.NewGetActivateBadRequest()
 		}
 
 		if err = backend.ActivateOwner(*activation.Username, ts); err != nil {
 			log.Print("Activation: Failed to activate Owner: " + err.Error())
-			return operations.NewGetActivateTokenBadRequest()
+			return operations.NewGetActivateBadRequest()
 		}
 
 		if err = backend.DeleteActivation(params.Token); err != nil {
 			log.Print("Activation: Failed to delete activation token: " + err.Error())
-			return operations.NewGetActivateTokenBadRequest()
+			return operations.NewGetActivateBadRequest()
 		}
 
-		return operations.NewGetActivateTokenNoContent()
+		response := models.ActivationResponseData{}
+		response.Data = append(response.Data, &models.ActivationResponseItem{
+			ID:         params.Token,
+			Type:       "activate",
+			Attributes: &models.ActivationResponse{true},
+		})
+		return operations.NewGetActivateOK().WithPayload(&response)
 	})
 
 	/*

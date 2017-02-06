@@ -11,6 +11,7 @@ type Storage struct {
 	GenerateHash           func(string, string) ([]byte, error)
 	GenerateToken          func() string
 	RunSignup              func(chan email.ActivationQItem, models.Owner) error
+	DumpAsset              func(string) (models.Asset, error)
 	NewActivation          func(models.Owner, string) error
 	DeleteActivation       func(string) error
 	GetActivations         func() models.Activations
@@ -54,6 +55,7 @@ func Setup(cfg interface{}, email_cfg interface{}) *Storage {
 		GenerateHash:           GenerateHash,
 		GenerateToken:          GenerateToken,
 		RunSignup:              RunSignup,
+		DumpAsset:              DumpAsset,
 		NewActivation:          postgres.NewActivation,
 		DeleteActivation:       postgres.DeleteActivation,
 		GetActivations:         postgres.GetActivations,

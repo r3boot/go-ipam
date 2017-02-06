@@ -1,0 +1,12 @@
+<div class="jumbotron text-center">
+{{#each model as |response|}}
+{{#if response.result}}
+<p>
+  Your account has been activated succesfully.
+</p>
+{{else}}
+<div class="alert alert-danger">Unknown token</div>
+{{/if}}
+{{/each}}
+</div>
+{{outlet}}

@@ -8,6 +8,8 @@ const Router = Ember.Router.extend({
 
 Router.map(function() {
   this.route('signup');
+  this.route('almostready');
+  this.route('activate', { path: '/activate/:token' });
 });
 
 export default Router;

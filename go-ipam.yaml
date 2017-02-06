@@ -12,11 +12,13 @@ basePath: /v1
 
 consumes:
   - application/json
+  - application/vnd.api+json
   - application/x-www-form-urlencoded
 
 produces:
   - application/json
   - application/json; charset=utf-8
+  - application/vnd.api+json
 
 paths:
   /signup:
@@ -29,7 +31,7 @@ paths:
           in: body
           description: The Owner to create.
           schema:
-            $ref: "#/definitions/Owner"
+            $ref: "#/definitions/VndOwner"
       responses:
         204:
           description: Signup completed succesfully.
@@ -39,16 +41,18 @@ paths:
           description: Signup not enabled.
         500:
           $ref: "#/responses/Standard500ErrorResponse"
-  /activate/{token}:
+  /activate:
     get:
       summary: Activate an Owner
       description: Activate a newly signed up Owner.
       security: []
       parameters:
-        - $ref: "#/parameters/token"
+        - $ref: "#/parameters/queryToken"
       responses:
-        204:
+        200:
           description: Owner activated succesfully.
+          schema:
+            $ref: "#/definitions/ActivationResponseData"
         400:
           description: Activation failed.
         500:
@@ -353,6 +357,20 @@ definitions:
         pattern: "[0-9a-f.:]{7,39}"
         minLength: 7
         maxLength: 39
+  VndOwnerData:
+    type: object
+    required:
+      - attributes
+    properties:
+      attributes:
+        $ref: "#/definitions/Owner"
+  VndOwner:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/VndOwnerData"
   Owners:
     type: array
     minItems: 10
@@ -379,6 +397,40 @@ definitions:
       generationTime:
         type: string
         format: dateTime
+  ActivationResponse:
+    type: object
+    properties:
+      result:
+        type: boolean
+  ActivationResponseItem:
+    type: object
+    properties:
+      type:
+        type: string
+        pattern: "[a-zA-Z0-9_-]{1,64}"
+        minLength: 1
+        maxLength: 64
+      id:
+        type: string
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        minLength: 36
+        maxLength: 36
+      attributes:
+        $ref: "#/definitions/ActivationResponse"
+  ActivationResponseItems:
+    type: array
+    minItems: 10
+    maxItems: 100
+    uniqueItems: true
+    items:
+      $ref: "#/definitions/ActivationResponseItem"
+  ActivationResponseData:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/ActivationResponseItems"
   Activations:
     type: array
     minItems: 10
@@ -453,6 +505,9 @@ definitions:
     pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     minLength: 36
     maxLength: 36
+  Asset:
+    type: string
+    format: binary
   Error:
     properties:
       code:
@@ -524,6 +579,22 @@ parameters:
     pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     minLength: 36
     maxLength: 36
+  queryToken:
+    name: token
+    in: query
+    required: true
+    type: string
+    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    minLength: 36
+    maxLength: 36
+  fileName:
+    name: fileName
+    in: path
+    required: true
+    type: string
+    pattern: "^[a-zA-Z0-9-_]+.[a-zA-Z0-9-_]+$"
+    minLength: 3
+    maxLength: 128
   pageSize:
     name: pageSize
     in: query
