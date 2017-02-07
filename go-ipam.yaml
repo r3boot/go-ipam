@@ -59,6 +59,8 @@ paths:
             $ref: "#/definitions/ActivationResponseData"
         400:
           description: Activation failed.
+          schema:
+            $ref: "#/definitions/ActivationResponseData"
         500:
           $ref: "#/responses/Standard500ErrorResponse"
   /auth:
@@ -430,11 +432,9 @@ definitions:
       $ref: "#/definitions/ActivationResponseItem"
   ActivationResponseData:
     type: object
-    required:
-      - data
     properties:
       data:
-        $ref: "#/definitions/ActivationResponseItems"
+        $ref: "#/definitions/ActivationResponseItem"
   Activations:
     type: array
     minItems: 10

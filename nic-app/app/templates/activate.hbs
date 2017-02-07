@@ -1,14 +1,12 @@
 <div class="jumbotron text-center">
-{{#each model as |response|}}
-{{#if response.result}}
+{{#if model.result}}
 <p>
   Your account has been activated succesfully.
 </p>
 
-<p>{{#link-to 'index'}}Back to homepage{{/link-to}}</p>
 {{else}}
 <div class="alert alert-danger">Unknown token</div>
 {{/if}}
-{{/each}}
+<p>{{#link-to 'index'}}Back to homepage{{/link-to}}</p>
 </div>
 {{outlet}}

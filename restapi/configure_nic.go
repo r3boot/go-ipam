@@ -29,6 +29,31 @@ import (
 
 //go:generate swagger generate server --target .. --name  --spec ../go-ipam.yaml
 
+func NewSignupResponseData(token string) models.SignupResponseData {
+	return models.SignupResponseData{
+		Data: &models.SignupResponseItem{
+			ID:   token,
+			Type: "signup",
+			Attributes: &models.SignupResponse{
+				Result: true,
+				ID:     token,
+			},
+		},
+	}
+}
+
+func NewActivationResponseData(token string, result bool) models.ActivationResponseData {
+	return models.ActivationResponseData{
+		Data: &models.ActivationResponseItem{
+			ID:   token,
+			Type: "activate",
+			Attributes: &models.ActivationResponse{
+				Result: result,
+			},
+		},
+	}
+}
+
 func configureFlags(api *operations.NicAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
@@ -188,22 +213,16 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			LastLoginHost:  "",
 		}
 
-		if token, err = backend.RunSignup(activationQ, owner); err != nil {
-			return operations.NewPostSignupBadRequest()
-		}
+		token, err = backend.RunSignup(activationQ, owner)
 
-		response := models.SignupResponseData{
-			Data: &models.SignupResponseItem{
-				ID:   token,
-				Type: "signup",
-				Attributes: &models.SignupResponse{
-					Result: true,
-					ID:     token,
-				},
-			},
-		}
+		response := NewSignupResponseData(token)
 
-		return operations.NewPostSignupOK().WithPayload(&response)
+		if err == nil {
+			return operations.NewPostSignupOK().WithPayload(&response)
+		} else {
+			response.Data.Attributes.Result = false
+			return operations.NewPostSignupOK().WithPayload(&response)
+		}
 	})
 
 	/*
@@ -213,37 +232,37 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		var (
 			activation models.Activation
 			ts         string
+			response   models.ActivationResponseData
 		)
 
 		ts = time.Now().Format(time.RFC3339)
 
+		response = NewActivationResponseData("NULL", false)
+
 		if !backend.HasActivation(params.Token) {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateBadRequest()
+			return operations.NewGetActivateOK().WithPayload(&response)
 		}
+		response.Data.ID = params.Token
 
 		activation = backend.GetActivation(params.Token)
 		if activation.Token == nil {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateBadRequest()
+			return operations.NewGetActivateOK().WithPayload(&response)
 		}
 
 		if err = backend.ActivateOwner(*activation.Username, ts); err != nil {
 			log.Print("Activation: Failed to activate Owner: " + err.Error())
-			return operations.NewGetActivateBadRequest()
+			return operations.NewGetActivateOK().WithPayload(&response)
 		}
 
 		if err = backend.DeleteActivation(params.Token); err != nil {
 			log.Print("Activation: Failed to delete activation token: " + err.Error())
-			return operations.NewGetActivateBadRequest()
+			return operations.NewGetActivateOK().WithPayload(&response)
 		}
 
-		response := models.ActivationResponseData{}
-		response.Data = append(response.Data, &models.ActivationResponseItem{
-			ID:         params.Token,
-			Type:       "activate",
-			Attributes: &models.ActivationResponse{true},
-		})
+		response.Data.Attributes.Result = true
+
 		return operations.NewGetActivateOK().WithPayload(&response)
 	})
 
