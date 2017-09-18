@@ -1,11 +1,11 @@
 <div class="jumbotron text-center">
-{{#if model.result}}
+{{#if model.activate.token}}
 <p>
   Your account has been activated succesfully.
 </p>
 
 {{else}}
-<div class="alert alert-danger">Unknown token</div>
+<div class="alert alert-danger">{{error.errors}}</div>
 {{/if}}
 <p>{{#link-to 'index'}}Back to homepage{{/link-to}}</p>
 </div>

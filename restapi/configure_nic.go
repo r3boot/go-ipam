@@ -29,27 +29,12 @@ import (
 
 //go:generate swagger generate server --target .. --name  --spec ../go-ipam.yaml
 
-func NewSignupResponseData(token string) models.SignupResponseData {
-	return models.SignupResponseData{
-		Data: &models.SignupResponseItem{
-			ID:   token,
-			Type: "signup",
-			Attributes: &models.SignupResponse{
-				Result: true,
-				ID:     token,
-			},
-		},
-	}
-}
-
-func NewActivationResponseData(token string, result bool) models.ActivationResponseData {
-	return models.ActivationResponseData{
-		Data: &models.ActivationResponseItem{
-			ID:   token,
-			Type: "activate",
-			Attributes: &models.ActivationResponse{
-				Result: result,
-			},
+func newErrorMessage(detail, pointer string) *models.Error {
+	return &models.Error{
+		Detail: detail,
+		Status: "422",
+		Source: &models.ErrorPointer{
+			Pointer: pointer,
 		},
 	}
 }
@@ -168,7 +153,6 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			salt       string
 			hash       []byte
 			hash_s     string
-			token      string
 			ts         string
 			post_owner *models.Owner
 		)
@@ -177,11 +161,11 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			return operations.NewPostSignupNotFound()
 		}
 
-		post_owner = params.Owner.Data.Attributes
+		post_owner = params.Signup.Signup
 
 		if post_owner.Password == "" {
 			log.Print("Signup: No Password specified")
-			return operations.NewPostSignupBadRequest()
+			return operations.NewPostSignupUnprocessableEntity()
 		}
 
 		ts = time.Now().Format(time.RFC3339)
@@ -189,13 +173,13 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 		salt, err = backend.GenerateSalt(32)
 		if err != nil {
 			log.Print("Signup: " + err.Error())
-			return operations.NewPostSignupBadRequest()
+			return operations.NewPostSignupUnprocessableEntity()
 		}
 
 		hash, err = backend.GenerateHash(post_owner.Password, salt)
 		if err != nil {
 			log.Print("Signup: " + err.Error())
-			return operations.NewPostSignupBadRequest()
+			return operations.NewPostSignupUnprocessableEntity()
 		}
 		hash_s = base64.URLEncoding.EncodeToString(hash)
 
@@ -213,15 +197,23 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 			LastLoginHost:  "",
 		}
 
-		token, err = backend.RunSignup(activationQ, owner)
+		err = backend.RunSignup(activationQ, owner)
 
-		response := NewSignupResponseData(token)
+		owner = backend.GetOwner(*post_owner.Username)
+
+		owner.Password = ""
+		owner.Salt = ""
+		response := models.SignupRestData{
+			Signup: &owner,
+			Errors: models.Errors{},
+		}
 
 		if err == nil {
 			return operations.NewPostSignupOK().WithPayload(&response)
 		} else {
-			response.Data.Attributes.Result = false
-			return operations.NewPostSignupOK().WithPayload(&response)
+			response.Signup = nil
+			response.Errors = append(response.Errors, newErrorMessage("Signup Failed", "signup/username"))
+			return operations.NewPostSignupUnprocessableEntity().WithPayload(&response)
 		}
 	})
 
@@ -230,38 +222,49 @@ func configureAPI(api *operations.NicAPI) http.Handler {
 	 */
 	api.GetActivateHandler = operations.GetActivateHandlerFunc(func(params operations.GetActivateParams) middleware.Responder {
 		var (
-			activation models.Activation
-			ts         string
-			response   models.ActivationResponseData
+			activation      models.Activation
+			ts              string
+			response        models.ActivationRestData
+			response_errmsg string
 		)
 
 		ts = time.Now().Format(time.RFC3339)
 
-		response = NewActivationResponseData("NULL", false)
+		response_errmsg = "Failed to activate token"
+
+		response = models.ActivationRestData{
+			Activate: &models.Activation{
+				ID:       42,
+				Token:    nil,
+				Username: activation.Username,
+			},
+			Errors: models.Errors{},
+		}
 
 		if !backend.HasActivation(params.Token) {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateOK().WithPayload(&response)
+			response.Errors = append(response.Errors, newErrorMessage(response_errmsg, "/activate/token"))
+			return operations.NewGetActivateUnprocessableEntity().WithPayload(&response)
 		}
-		response.Data.ID = params.Token
 
 		activation = backend.GetActivation(params.Token)
 		if activation.Token == nil {
 			log.Print("Activation: Received an unknown token: " + params.Token)
-			return operations.NewGetActivateOK().WithPayload(&response)
+			response.Errors = append(response.Errors, newErrorMessage(response_errmsg, "/activate/token"))
+			return operations.NewGetActivateUnprocessableEntity().WithPayload(&response)
 		}
 
 		if err = backend.ActivateOwner(*activation.Username, ts); err != nil {
 			log.Print("Activation: Failed to activate Owner: " + err.Error())
-			return operations.NewGetActivateOK().WithPayload(&response)
+			response.Errors = append(response.Errors, newErrorMessage(response_errmsg, "/activate/token"))
+			return operations.NewGetActivateUnprocessableEntity().WithPayload(&response)
 		}
 
 		if err = backend.DeleteActivation(params.Token); err != nil {
 			log.Print("Activation: Failed to delete activation token: " + err.Error())
-			return operations.NewGetActivateOK().WithPayload(&response)
+			response.Errors = append(response.Errors, newErrorMessage(response_errmsg, "/activate/token"))
+			return operations.NewGetActivateUnprocessableEntity().WithPayload(&response)
 		}
-
-		response.Data.Attributes.Result = true
 
 		return operations.NewGetActivateOK().WithPayload(&response)
 	})

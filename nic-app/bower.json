@@ -1,5 +1,6 @@
 {
   "name": "nic-app",
   "dependencies": {
+    "base64": "~0.3.0"
   }
 }

@@ -7,21 +7,23 @@ import (
 	"log"
 )
 
-func RunSignup(queue chan email.ActivationQItem, owner models.Owner) (token string, err error) {
+func RunSignup(queue chan email.ActivationQItem, owner models.Owner) error {
 	var (
 		signupRequest email.ActivationQItem
+		token         string
+		err           error
 	)
 
 	if backend.HasOwner(owner) {
 		err = errors.New("RunSignup: Owner already exists: " + owner.Fullname)
 		log.Print(err)
-		return
+		return err
 	}
 
 	if err = backend.AddOwner(owner); err != nil {
 		err = errors.New("RunSignup: Failed to add owner: " + err.Error())
 		log.Print(err)
-		return
+		return err
 	}
 
 	token = backend.GenerateToken()
@@ -30,11 +32,11 @@ func RunSignup(queue chan email.ActivationQItem, owner models.Owner) (token stri
 		err = errors.New("RunSignup: Failed to add activation token: " + err.Error())
 		log.Print(err)
 		token = ""
-		return
+		return err
 	}
 
 	signupRequest = email.ActivationQItem{token, owner}
 	queue <- signupRequest
 
-	return
+	return nil
 }

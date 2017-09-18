@@ -1,0 +1,18 @@
+<div class="jumbotron text-center">
+  <div class="login-form">
+    <form id="login-form" class="text-left">
+    <div class="main-login-form">
+      <div class="form-group">
+        <label for="login-username-input">Enter your username:</label>
+        {{input id="login-username-input" value=username type="text" class="form-control" placeholder="Enter your username." autofocus="autofocus"}}
+      </div>
+      <div class="form-group">
+        <label for="login-password-input">Enter your password:</label>
+        {{input id="login-password-input" value=password type="password" class="form-control" autofocus="autofocus"}}
+      </div>
+      <button disabled={{isDisabled}} {{action 'getSessionToken'}} class="btn btn-primary btn-lg btn-block">Login</button>
+    </div>
+    </form>
+  </div>
+</div>
+{{outlet}}

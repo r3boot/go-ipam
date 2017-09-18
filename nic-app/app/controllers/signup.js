@@ -29,14 +29,23 @@ export default Ember.Controller.extend({
       const email = this.get('email');
       const password = this.get('password');
 
+      this.set('username', '');
+      this.set('fullname', '');
+      this.set('email', '');
+      this.set('password', '');
+      this.set('verify', '');
+
       const newAccount = this.store.createRecord('signup', {
         username: username,
         fullname: fullname,
         email: email,
         password: password,
       });
+
       newAccount.save().then(function () {
         this.transitionToRoute('almostready');
+      }.bind(this), function(error) {
+        this.transitionToRoute('signupfailed');
       }.bind(this));
     }
   }
